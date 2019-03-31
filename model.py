@@ -30,6 +30,7 @@ class DecoderRNN(nn.Module):
         self.word_embed = nn.Embedding(vocab_size, embed_size)
         self.lstm = nn.LSTM(embed_size, hidden_size, num_layers)
         self.fc = nn.Linear(hidden_size, vocab_size)
+        self.h = None
     
     def forward(self, features, captions):
         
@@ -39,8 +40,8 @@ class DecoderRNN(nn.Module):
         features = features.view(features.size(0),1,-1)
                 
         x = torch.cat((features,emb_cap),1)
-        y,h = self.lstm(x)
-           
+        y, self.h =self.lstm(x, self.h)
+        
         y = self.fc(y[:,:-1,:])
 
         
@@ -56,7 +57,6 @@ class DecoderRNN(nn.Module):
         start_emb = torch.LongTensor(torch.tensor([0])).cuda()
         start_emb = self.word_embed(start_emb).view(1,1,-1)    
         x = torch.cat((inputs,start_emb),1)
-        
         for i in range(max_len):
             y,h = self.lstm(x)
             out = self.fc(y)
@@ -76,7 +76,7 @@ class DecoderRNN(nn.Module):
            
             new_word = torch.LongTensor(idx).cuda().view(1,-1)
             new_word = self.word_embed(new_word).view(1,1,-1)
-            x = torch.cat((x,new_word),1)
-
+            #x = torch.cat((x,new_word),1)
+            x = new_word
                          
         return vocab_idxes
